@@ -28,8 +28,9 @@ class Server:
         self.goodput = 0
         self.badput = 0
 
-    def handleDeparture(self, request, sim_time, event_list):
-        print(str(sim_time) + "   \t: ", request, "   \tDeparted ")
+    def handleDeparture(self, request, sim_time, event_list, verbose=True):
+        if verbose:
+            print(str(sim_time) + "   \t: ", request, "   \tDeparted ")
 
         # Updating metrics
         self.customers_serviced += 1
@@ -53,10 +54,10 @@ class Server:
             # Add a departure event to the event_list
             event_list.push(sim_time + service_time,
                             EventType.DEPARTURE, request)
-            # print(event_list)
 
-    def handleArrival(self, request, sim_time, event_list):
-        print(str(sim_time) + "   \t: ", request, "   \tArrived ")
+    def handleArrival(self, request, sim_time, event_list, verbose=True):
+        if verbose:
+            print(str(sim_time) + "   \t: ", request, "   \tArrived ")
 
         if not self.is_busy:
             # If server is idle
@@ -68,7 +69,6 @@ class Server:
             # Add a departure event to the event_list
             event_list.push(sim_time + service_time,
                             EventType.DEPARTURE, request)
-            # print(event_list)
         else:
             # Add the request to the queue
             self.queue.append(request)
@@ -97,10 +97,14 @@ mean_service_time = float(
     input("Enter mean service time of server: "))
 mean_interarrvial_time = float(
     input("Enter mean interarrival time of requests: "))
+mean_timeout = float(
+    input("Enter average timeout of requests: "))
 MAX_CUSTOMERS_TO_SERVICE = int(
     input("Enter maximum number of customers to service before stopping a run: "))
 NUM_OF_RUNS = int(
     input("Enter number of runs: "))
+verbose = bool(int(
+    input("Type 1 for verbose and 0 for no verbose: ")))
 
 
 def run(i, mean_service_time, mean_interarrvial_time, MAX_CUSTOMERS_TO_SERVICE):
@@ -108,8 +112,7 @@ def run(i, mean_service_time, mean_interarrvial_time, MAX_CUSTOMERS_TO_SERVICE):
     sim_time = 0.0
     server = Server(mean_service_time)
     interarrvial_time = random.expovariate(1.0/mean_interarrvial_time)
-    # TODO May need user input for timeout parameters
-    timeout = 2 + random.expovariate(mean_service_time)
+    timeout = random.expovariate(mean_timeout)
     event_list.push(sim_time + interarrvial_time, EventType.ARRIVAL,
                     Request(sim_time + interarrvial_time, timeout))
 
@@ -127,18 +130,17 @@ def run(i, mean_service_time, mean_interarrvial_time, MAX_CUSTOMERS_TO_SERVICE):
             utilization_time += (sim_time - prev_sim_time)
             queue_length_area += (sim_time - prev_sim_time) * \
                 server.getQueueLength()
-            server.handleDeparture(request, sim_time, event_list)
+            server.handleDeparture(request, sim_time, event_list, verbose)
 
         elif event_type == EventType.ARRIVAL:
             if (server.getStatus() == True):
                 utilization_time += (sim_time - prev_sim_time)
             queue_length_area += (sim_time - prev_sim_time) * \
                 server.getQueueLength()
-            server.handleArrival(request, sim_time, event_list)
+            server.handleArrival(request, sim_time, event_list, verbose)
             # Next arrival will happen after interarrival_time
             interarrvial_time = random.expovariate(1.0/mean_interarrvial_time)
-            # TODO May need user input for timeout parameters
-            timeout = 2 + random.expovariate(mean_service_time)
+            timeout = random.expovariate(mean_timeout)
             event_list.push(sim_time + interarrvial_time, EventType.ARRIVAL,
                             Request(sim_time + interarrvial_time, timeout))
             # print(event_list)
@@ -146,9 +148,6 @@ def run(i, mean_service_time, mean_interarrvial_time, MAX_CUSTOMERS_TO_SERVICE):
     assert server.getNumberOfCustomersServiced() == MAX_CUSTOMERS_TO_SERVICE
     total_time = sim_time
     response_time_so_far = server.getTotalResponseTime()
-    # print(utilization_time)
-    # print(queue_length_area)
-    # print(response_time_so_far)
     utilization = utilization_time/total_time
     queue_length = queue_length_area/total_time
     response_time = response_time_so_far/MAX_CUSTOMERS_TO_SERVICE
