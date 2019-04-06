@@ -29,16 +29,18 @@ class Server:
         self.badput = 0
 
     def handleDeparture(self, request, sim_time, event_list, verbose=True):
-        if verbose:
-            print(str(sim_time) + "   \t: ", request, "   \tDeparted ")
-
         # Updating metrics
         self.customers_serviced += 1
         self.response_time_so_far += (sim_time - request.creation_time)
+    
         if (request.creation_time + request.timeout >= sim_time):
             self.goodput += 1
+            if verbose:
+                print(str(sim_time) + "   \t: ", request, "   \tDeparted as Goodput")
         else:
             self.badput += 1
+            if verbose:
+                print(str(sim_time) + "   \t: ", request,"   \tDeparted as Badput")
 
         if len(self.queue) == 0:
             # No requests present in queue
@@ -108,11 +110,13 @@ verbose = bool(int(
 
 
 def run(i, mean_service_time, mean_interarrvial_time, MAX_CUSTOMERS_TO_SERVICE):
+    # Initialization
     event_list = PriorityQueue()
     sim_time = 0.0
     server = Server(mean_service_time)
+    # Initializing the event_list by adding the first arrival
     interarrvial_time = random.expovariate(1.0/mean_interarrvial_time)
-    timeout = random.expovariate(mean_timeout)
+    timeout = random.expovariate(1.0/mean_timeout)
     event_list.push(sim_time + interarrvial_time, EventType.ARRIVAL,
                     Request(sim_time + interarrvial_time, timeout))
 
@@ -140,11 +144,11 @@ def run(i, mean_service_time, mean_interarrvial_time, MAX_CUSTOMERS_TO_SERVICE):
             server.handleArrival(request, sim_time, event_list, verbose)
             # Next arrival will happen after interarrival_time
             interarrvial_time = random.expovariate(1.0/mean_interarrvial_time)
-            timeout = random.expovariate(mean_timeout)
+            timeout = random.expovariate(1.0/mean_timeout)
             event_list.push(sim_time + interarrvial_time, EventType.ARRIVAL,
                             Request(sim_time + interarrvial_time, timeout))
-            # print(event_list)
 
+    # Printing metrics of a run
     assert server.getNumberOfCustomersServiced() == MAX_CUSTOMERS_TO_SERVICE
     total_time = sim_time
     response_time_so_far = server.getTotalResponseTime()
@@ -179,7 +183,7 @@ def mean(list_):
     return sum(list_)/len(list_)
 
 
-# Looping for each run
+# Looping for each run to accumulate statistics
 for i in range(NUM_OF_RUNS):
     print("--------------------------------------------------")
     print("Run " + str(i))
@@ -190,8 +194,8 @@ for i in range(NUM_OF_RUNS):
     avg_response_time.append(response_time)
     avg_goodput.append(goodput)
     avg_badput.append(badput)
-print("################## STATISITCS ################################")
-print("Utilization: \t\t", mean(avg_utilization))
+print("\n################## STATISITCS ################################")
+print("Server Utilization: \t", mean(avg_utilization))
 print("Queue Length: \t\t", mean(avg_queue_length))
 print("Response Time: \t\t", mean(avg_response_time))
 print("Goodput: \t\t", mean(avg_goodput))

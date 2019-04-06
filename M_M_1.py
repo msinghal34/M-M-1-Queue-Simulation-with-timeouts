@@ -62,7 +62,6 @@ class Server:
             # Add a departure event to the event_list
             event_list.push(sim_time + service_time,
                             EventType.DEPARTURE, request)
-            # print(event_list)
         else:
             # Add the request to the queue
             self.queue.append(request)
@@ -94,9 +93,11 @@ verbose = bool(int(
 
 
 def run(i, mean_service_time, mean_interarrvial_time, MAX_CUSTOMERS_TO_SERVICE):
+    # Initialization
     event_list = PriorityQueue()
     sim_time = 0.0
     server = Server(mean_service_time)
+    # Initializing the event_list by adding the first arrival
     interarrvial_time = random.expovariate(1.0/mean_interarrvial_time)
     event_list.push(sim_time + interarrvial_time, EventType.ARRIVAL,
                     Request(sim_time + interarrvial_time))
@@ -128,6 +129,7 @@ def run(i, mean_service_time, mean_interarrvial_time, MAX_CUSTOMERS_TO_SERVICE):
             event_list.push(sim_time + interarrvial_time, EventType.ARRIVAL,
                             Request(sim_time + interarrvial_time))
 
+    # Printing metrics of a run
     assert server.getNumberOfCustomersServiced() == MAX_CUSTOMERS_TO_SERVICE
     total_time = sim_time
     response_time_so_far = server.getTotalResponseTime()
@@ -157,7 +159,7 @@ def mean(list_):
     return sum(list_)/len(list_)
 
 
-# Looping for each run
+# Looping for each run to accumulate statistics
 for i in range(NUM_OF_RUNS):
     print("--------------------------------------------------")
     print("Run " + str(i))
@@ -167,8 +169,8 @@ for i in range(NUM_OF_RUNS):
     avg_queue_length.append(queue_length)
     avg_response_time.append(response_time)
     avg_throughput.append(throughput)
-print("################## STATISITCS ################################")
-print("Utilization:", mean(avg_utilization))
-print("Queue Length:", mean(avg_queue_length))
-print("Response Time:", mean(avg_response_time))
-print("Throughput:", mean(avg_throughput))
+print("\n################## STATISITCS ################################")
+print("Server Utilization: \t", mean(avg_utilization))
+print("Queue Length: \t\t", mean(avg_queue_length))
+print("Response Time: \t\t", mean(avg_response_time))
+print("Throughput: \t\t", mean(avg_throughput))
